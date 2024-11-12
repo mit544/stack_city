@@ -5,6 +5,7 @@ import { Input } from "./popups_component/input";
 import { Label } from "./popups_component/label";
 import { X, UserPlus, Key, Mail, Calendar, Phone, User } from "lucide-react";
 import { useParams } from "react-router-dom";
+import axios from "axios"
 
 const LogInPopUp = ({ isOpen, onClose, NewToGame, forgetPassOpen, onLoginSuccess }) => {
     if (!isOpen) return null;
@@ -13,49 +14,51 @@ const LogInPopUp = ({ isOpen, onClose, NewToGame, forgetPassOpen, onLoginSuccess
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(null);
 
+
     const handleLogin = async (event) => {
         event.preventDefault();
         setLoading(true);
 
         try {
-            //  mit prajapati (development and production link support)
+            // Set the base URL based on environment
             const API_BASE_URL =
                 process.env.NODE_ENV === "development"
                     ? "http://localhost:5000"
                     : process.env.Deployed_link;
 
-            const response = await fetch(`${API_BASE_URL}/api/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
+            // Send login request
+            const response = await axios.post(`${API_BASE_URL}/api/login`, { email, password });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error:', errorData);
-
-                throw new Error(errorData.message || "Failed to login");
-            }
-
-            const data = await response.json();
+            // Extract the token and handle successful login
+            const data = response.data;
             console.log("Login successful:", data);
 
             sessionStorage.setItem("jwtToken", data.token);
             onLoginSuccess();
             onClose();
+
+            // Redirect if `q_id` is provided
             if (q_id) {
                 console.log(`Received q_id: ${q_id}`);
                 window.location.href = `/explore/${String(q_id)}`;
+            } else {
+                window.location.href = "/dashboard";
             }
-            // window.location.href = "/dashboard";
+
         } catch (err) {
             setLoading(false);
-            alert(err.message);
 
+            // Check if the error is a response error (from server) or a request error
+            if (err.response) {
+                console.error("Error:", err.response.data);
+                alert(err.response.data.message || "Failed to login");
+            } else {
+                console.error("Error:", err.message);
+                alert("Network error or server unavailable");
+            }
         }
     };
+
 
     return (
         <AnimatePresence>

@@ -128,7 +128,7 @@ def get_location_from_coordinates(lat, lon):
 
 
 
-@login_bp.route('/api/login', methods=['POST'])
+@login_bp.route('/api/login', methods=['POST', 'OPTION'])
 def login():
     data = request.json
     email = data.get('email')
